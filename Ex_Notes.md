@@ -277,7 +277,6 @@ Nikto之使用於弱掃
 - sudo hping3 -c 3 [10.10.10.10](https://10.10.10.10)
 - sudo hping3 [10.10.10.10](https://10.10.10.10) --udp --rand-source --data 500
 - sudo hping3 -S [10.10.10.10](https://10.10.10.10) -p 80 -c 5
-- 
 
 **分析Modbus**
 
@@ -327,6 +326,8 @@ HASH破密(Linux)
 - john只要做過一次，再下一次指令，則表示不會再執行，請到~/.john/XXX.pot內查看
 - 亦可以用：
     - [https://crackstation.net](https://crackstation.net)
+    - 可用hashcat
+        - hashcat -a 0 -m 0 &lt;hash file&gt; &lt;wordlist&gt; --&gt;raw md5
 
 HASH處理(Windows)
 
