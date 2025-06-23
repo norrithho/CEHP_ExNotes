@@ -202,8 +202,9 @@ Nikto之使用於弱掃
 
 - 利用weevely製作webshell
     - weevely generate cehp XXXX.php
+- 將製作出來的web shell上傳到網站上
 - 利用weevely連線到後門
-    - weevely [http://xxxxxx.php](http://xxxxxx.php) chep
+    - weevely [http://xxxxxx.php](http://xxxxxx.php) chep （網址要是上傳web shell的那個實際網址）
 - 利用weevely下載檔案
     - file\_download 遠端 地端
 
@@ -363,7 +364,7 @@ HASH處理(Windows)
 
 - 用來製作加密磁碟機
 
-**驗證檔案完整性**
+**驗證檔案完整性（計算出檔案的hash值）**
 
 - CertUtil (如上說明)
 - HashMyFiles
